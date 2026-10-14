@@ -76,6 +76,33 @@
 ```
 `status` ∈ `strong | moderate | weak | missing`。
 
+### POST `/plan/generate`
+基于当前画像 + 各维度得分 + 近期失分记忆，LLM 生成个性化学习路径（分阶段、可验收）。无画像 → 40001；模型失败 → 50001（无静态兜底）。
+
+**响应 data：**
+```json
+{
+  "createdAt": "2026-10-14T14:50:25Z",
+  "targetRole": "AI应用工程师",
+  "totalWeeks": 6,
+  "phases": [
+    {
+      "name": "阶段一：重建算法与数据结构基础",
+      "weeks": "第1-2周",
+      "items": [
+        { "dimensionId": "algo", "topic": "高频算法题精练", "goal": "掌握 20 道 LeetCode 中等真题",
+          "acceptance": "笔试该维度达到 70 分", "estDays": 10,
+          "resources": [{ "title": "LeetCode Top Interview", "url": "https://...", "type": "doc" }] }
+      ]
+    }
+  ]
+}
+```
+约束：阶段 2~4 个，每阶段 1~3 项；`dimensionId` 限五个维度 ID；`estDays` 1~14。
+
+### GET `/plan`
+返回最近一次生成的学习路径；未生成时 `data` 为 `null`。
+
 ---
 
 ## 3. 笔试 Exam

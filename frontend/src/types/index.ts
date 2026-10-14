@@ -64,6 +64,28 @@ export interface GapReport {
   recommendations: Recommendation[]
 }
 
+export interface PlanItem {
+  dimensionId: DimensionId
+  topic: string
+  goal: string
+  acceptance: string
+  estDays: number
+  resources: Resource[]
+}
+
+export interface PlanPhase {
+  name: string
+  weeks: string
+  items: PlanItem[]
+}
+
+export interface StudyPlan {
+  createdAt: string
+  targetRole: string
+  totalWeeks: number
+  phases: PlanPhase[]
+}
+
 export type QuestionType = 'choice' | 'coding' | 'system_design'
 
 export interface Question {

@@ -13,6 +13,7 @@ type Server struct {
 	mu sync.Mutex
 
 	profile    *Profile
+	plan       *StudyPlan
 	memEvents  []memoryEvent
 	exam       *examSession
 	examHist   []examRecord
@@ -45,6 +46,8 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("POST /api/v1/resume/upload", s.handleUploadResume)
 	mux.HandleFunc("GET /api/v1/resume/profile", s.handleGetProfile)
 	mux.HandleFunc("GET /api/v1/gap/analysis", s.handleGapAnalysis)
+	mux.HandleFunc("POST /api/v1/plan/generate", s.handleGeneratePlan)
+	mux.HandleFunc("GET /api/v1/plan", s.handleGetPlan)
 	mux.HandleFunc("POST /api/v1/exam/generate", s.handleGenerateExam)
 	mux.HandleFunc("POST /api/v1/exam/{examId}/submit", s.handleSubmitExam)
 	mux.HandleFunc("POST /api/v1/interview/session", s.handleCreateInterview)

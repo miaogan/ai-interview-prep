@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAppStore } from '../stores/app'
+import { DIMS } from '../constants'
 import type { Status } from '../types'
 
 const store = useAppStore()
-onMounted(() => { if (!store.gap) store.fetchGap() })
+const planError = ref('')
+onMounted(() => {
+  if (!store.gap) store.fetchGap()
+  if (!store.plan) store.fetchPlan()
+})
 
 const LABEL: Record<Status, string> = { strong: '扎实', moderate: '合格', weak: '薄弱', missing: '缺失' }
+
+async function genPlan() {
+  planError.value = ''
+  try {
+    await store.generatePlan()
+  } catch (e: any) {
+    planError.value = e?.response?.data?.message || '学习路径生成失败，请重试'
+  }
+}
 </script>
 
 <template>
@@ -56,13 +70,56 @@ const LABEL: Record<Status, string> = { strong: '扎实', moderate: '合格', we
             </a>
           </div>
         </div>
-        <p class="muted mt16" style="font-size:13px">💡 去<RouterLink to="/exam" class="link">笔试</RouterLink>和<RouterLink to="/interview" class="link">模拟面试</RouterLink>练一练，回来刷新看分数变化——这就是长期记忆的效果。</p>
       </div>
       <div v-else class="card center mt16"><p>🎉 没有明显短板，去挑战更难的题吧。</p></div>
+
+      <!-- 学习路径（LLM 生成） -->
+      <div class="card mt16" style="border-color:var(--brand)">
+        <div class="card-title row spread">
+          <span>个性化学习路径</span>
+          <button class="btn" :disabled="store.planLoading" @click="genPlan">
+            {{ store.planLoading ? '生成中（约 10~30 秒）…' : store.plan ? '↻ 重新生成' : '生成学习路径' }}
+          </button>
+        </div>
+        <p v-if="planError" class="mt8" style="color:var(--bad)">{{ planError }}</p>
+        <p v-if="!store.plan && !store.planLoading" class="muted" style="font-size:13px">
+          基于画像、各维度得分与近期练习记录，由 LLM 生成分阶段学习计划：学什么、学到什么程度、怎么验收。
+        </p>
+
+        <template v-if="store.plan">
+          <div class="row wrap mt8" style="gap:8px">
+            <span class="pill moderate">{{ store.plan.targetRole }}</span>
+            <span class="pill moderate">共 {{ store.plan.totalWeeks }} 周</span>
+            <span class="muted" style="font-size:12px">生成于 {{ store.plan.createdAt.slice(0, 10) }}</span>
+          </div>
+          <div v-for="ph in store.plan.phases" :key="ph.name" class="phase">
+            <div class="row spread">
+              <strong>{{ ph.name }}</strong>
+              <span class="kbd">{{ ph.weeks }}</span>
+            </div>
+            <div v-for="it in ph.items" :key="it.topic" class="plan-item">
+              <div class="row spread">
+                <strong style="font-size:14px">{{ it.topic }}</strong>
+                <span class="pill moderate">{{ DIMS.find(d => d.id === it.dimensionId)?.name || it.dimensionId }}</span>
+              </div>
+              <div class="muted mt8" style="font-size:13px">🎯 {{ it.goal }}</div>
+              <div class="muted" style="font-size:13px">✓ 验收：{{ it.acceptance }} · 约 {{ it.estDays }} 天</div>
+              <div class="row wrap spread mt8">
+                <span class="row wrap" style="gap:10px">
+                  <a v-for="res in it.resources" :key="res.title" :href="res.url" target="_blank" class="link" style="font-size:13px">📄 {{ res.title }}</a>
+                </span>
+                <RouterLink :to="'/exam?dims=' + it.dimensionId" class="link" style="font-size:13px">去练习 →</RouterLink>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped>
 .small { font-size: 12px; }
+.phase { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.plan-item { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
 </style>

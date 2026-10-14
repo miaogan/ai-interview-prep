@@ -4,7 +4,7 @@ import type {
   Profile, ResumeUploadResp, GapReport, Dimension, DimensionId, Status,
   Exam, ExamGenerateReq, ExamResult, Question, QuestionType, ResultItem,
   InterviewSession, InterviewMsgResp, InterviewReport, Msg, AnswerNote, QuestionReview,
-  RadarResp, DashboardSummary,
+  RadarResp, DashboardSummary, StudyPlan, PlanPhase,
 } from '../types'
 
 const now = () => new Date().toISOString()
@@ -115,6 +115,45 @@ export function mockGapAnalysis(): GapReport {
     .map((d) => ({ dimensionId: d.id, priority: (d.weight >= 0.2 && d.status === 'missing' ? 'high' : 'medium') as 'high' | 'medium', topic: recMap[d.id].topic, resources: recMap[d.id].resources }))
   return { overallScore: overall, dimensions: dims, recommendations }
 }
+
+// ---------- 2.5 学习路径（mock：按薄弱维度确定性合成，结构同真实 LLM 输出） ----------
+const PLAN_CATALOG: Record<DimensionId, { topic: string; resources: { title: string; url: string; type: string }[] }> = {
+  dl_fundamentals: { topic: 'Transformer 原理与手撕注意力', resources: [{ title: 'The Illustrated Transformer', url: 'https://jalammar.github.io/illustrated-transformer/', type: 'blog' }] },
+  llm_app: { topic: 'RAG 进阶：混合检索 + Rerank + Agent', resources: [{ title: 'LlamaIndex RAG', url: 'https://docs.llamaindex.ai/', type: 'doc' }, { title: 'MCP 官方', url: 'https://modelcontextprotocol.io/', type: 'doc' }] },
+  finetune: { topic: 'LoRA/QLoRA 微调实战', resources: [{ title: 'HuggingFace PEFT', url: 'https://huggingface.co/docs/peft', type: 'doc' }] },
+  mlops: { topic: 'vLLM 部署 + 量化推理', resources: [{ title: 'vLLM 文档', url: 'https://docs.vllm.ai/', type: 'doc' }] },
+  algo: { topic: '系统设计 + 手撕代码高频题', resources: [{ title: 'System Design Primer', url: 'https://github.com/donnemartin/system-design-primer', type: 'repo' }] },
+}
+
+let planState: StudyPlan | null = null
+
+export function mockGeneratePlan(): StudyPlan {
+  const dims = DIM_IDS.map((id) => ({ id, score: scoreDimension(id) }))
+    .sort((a, b) => a.score - b.score)
+    .filter((d) => d.score < 75)
+  const phases: PlanPhase[] = []
+  const chunk = 2
+  for (let i = 0; i < dims.length; i += chunk) {
+    const part = dims.slice(i, i + chunk)
+    const phaseIdx = phases.length
+    phases.push({
+      name: `阶段${['一', '二', '三'][phaseIdx] || phaseIdx + 1}：${part.map((d) => MODEL[d.id].name).join(' + ')}`,
+      weeks: `第${phaseIdx * 2 + 1}-${phaseIdx * 2 + 2}周`,
+      items: part.map((d) => ({
+        dimensionId: d.id,
+        topic: PLAN_CATALOG[d.id].topic,
+        goal: `系统过一遍核心概念并完成配套练习（当前 ${d.score} 分）`,
+        acceptance: `笔试「${MODEL[d.id].name}」维度达到 70 分`,
+        estDays: 10,
+        resources: PLAN_CATALOG[d.id].resources,
+      })),
+    })
+  }
+  planState = { createdAt: now(), targetRole: state.profile?.targetRole || 'AI工程师', totalWeeks: Math.max(2, phases.length * 2), phases }
+  return planState
+}
+
+export function mockGetPlan(): StudyPlan | null { return planState }
 
 // ---------- 3. 笔试 ----------
 export function mockGenerateExam(req: ExamGenerateReq): Exam {

@@ -1,7 +1,7 @@
 // API 适配层：VITE_USE_MOCK=true 走 mock，否则走真实后端（契约一致，后端接入零改动）
 import axios from 'axios'
 import type {
-  Profile, ResumeUploadResp, GapReport, Exam, ExamGenerateReq, ExamResult,
+  Profile, ResumeUploadResp, GapReport, Exam, ExamGenerateReq, ExamResult, StudyPlan,
   InterviewSession, InterviewMsgResp, InterviewReport, RadarResp, DashboardSummary, ApiResponse,
 } from '../types'
 import * as mock from './mock'
@@ -38,6 +38,16 @@ export const api = {
   gapAnalysis(): Promise<ApiResponse<GapReport>> {
     if (USE_MOCK) return delay(mock.mockGapAnalysis())
     return get<GapReport>('/gap/analysis')
+  },
+
+  // 学习路径
+  generatePlan(): Promise<ApiResponse<StudyPlan>> {
+    if (USE_MOCK) return delay(mock.mockGeneratePlan(), 1200)
+    return post<StudyPlan>('/plan/generate')
+  },
+  getPlan(): Promise<ApiResponse<StudyPlan | null>> {
+    if (USE_MOCK) return delay(mock.mockGetPlan(), 200)
+    return get<StudyPlan | null>('/plan')
   },
 
   // 笔试

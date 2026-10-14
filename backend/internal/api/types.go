@@ -4,10 +4,14 @@ import "aiprep/backend/internal/domain"
 
 // 契约结构体：与 docs/02、frontend/src/types/index.ts 一一对应（camelCase）。
 
-// 画像类型定义在 domain 包（graph/resume 解析链共用），此处取别名保持 api 包既有用法不变。
+// 画像/计划类型定义在 domain 包（graph/resume 解析链共用），此处取别名保持 api 包既有用法不变。
 type Skill = domain.Skill
 type Project = domain.Project
 type Profile = domain.Profile
+type Resource = domain.Resource
+type PlanItem = domain.PlanItem
+type PlanPhase = domain.PlanPhase
+type StudyPlan = domain.StudyPlan
 
 type ResumeUploadResp struct {
 	ResumeID      string   `json:"resumeId"`
@@ -22,12 +26,6 @@ type Dimension struct {
 	Score  int     `json:"score"`
 	Weight float64 `json:"weight"`
 	Status string  `json:"status"` // strong | moderate | weak | missing
-}
-
-type Resource struct {
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Type  string `json:"type"`
 }
 
 type Recommendation struct {

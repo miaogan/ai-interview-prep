@@ -15,6 +15,9 @@ InterviewReport { sessionId, overallScore, dimensions[], highlights[], improveme
 QuestionReview { turn, question, score, covered[], missed[] }   // 逐题复盘
 AnswerNote { covered[], missed[], tip }                          // 每轮回答批注（message 响应下发）
 RadarItem { id, title, source, url, summary, publishedAt, tags[], relevanceDimension }
+StudyPlan { createdAt, targetRole, totalWeeks, phases: PlanPhase[] }   // LLM 生成，内存态
+PlanPhase { name, weeks, items: PlanItem[] }
+PlanItem { dimensionId, topic, goal, acceptance, estDays(1-14), resources: Resource[] }
 ```
 
 TS 类型定义见 `frontend/src/types/index.ts`，与本文档和 02 契约一一对应。

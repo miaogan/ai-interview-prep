@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import { api } from '../api/client'
 import { useAppStore } from '../stores/app'
+import { DIMS } from '../constants'
 import type { DimensionId, Exam, ExamResult } from '../types'
 
 const store = useAppStore()
 
-const DIMS: { id: DimensionId; name: string }[] = [
-  { id: 'dl_fundamentals', name: '深度学习基础' },
-  { id: 'llm_app', name: 'LLM应用' },
-  { id: 'finetune', name: '模型微调' },
-  { id: 'mlops', name: 'MLOps/部署' },
-  { id: 'algo', name: '算法与数据结构' },
-]
-
-const selected = ref<Set<DimensionId>>(new Set(['llm_app', 'finetune']))
+// 学习路径「去练习」带 ?dims=algo,llm_app 直达时预选维度
+const route = useRoute()
+const queryDims = typeof route.query.dims === 'string'
+  ? route.query.dims.split(',').filter((d): d is DimensionId => DIMS.some((x) => x.id === d))
+  : []
+const selected = ref<Set<DimensionId>>(new Set(queryDims.length ? queryDims : ['llm_app', 'finetune']))
 const difficulty = ref<'easy' | 'medium' | 'hard'>('medium')
 const exam = ref<Exam | null>(null)
 const answers = reactive<Record<string, string>>({})
