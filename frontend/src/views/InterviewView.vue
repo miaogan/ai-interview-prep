@@ -20,6 +20,11 @@ const finished = ref(false)
 const report = ref<InterviewReport | null>(null)
 const lastFeedback = ref<{ score: number; hint: string } | null>(null)
 const scroller = ref<HTMLElement | null>(null)
+const error = ref('')
+
+function errMsg(e: any, fallback: string) {
+  return e?.response?.data?.message || fallback
+}
 
 async function scrollDown() {
   await nextTick()
@@ -27,19 +32,27 @@ async function scrollDown() {
 }
 
 async function start() {
-  started.value = true
+  error.value = ''
   finished.value = false
   report.value = null
   thread.value = []
-  const r = await api.createInterview(type.value)
-  sessionId.value = r.data.sessionId
-  const first = await api.interviewFirstMsg(sessionId.value)
-  thread.value = [{ msg: { role: 'interviewer', content: first.data.content } }]
+  sending.value = true
+  started.value = true
+  try {
+    const r = await api.createInterview(type.value)
+    sessionId.value = r.data.sessionId
+    const first = await api.interviewFirstMsg(sessionId.value)
+    thread.value = [{ msg: { role: 'interviewer', content: first.data.content } }]
+  } catch (e: any) {
+    started.value = false
+    error.value = errMsg(e, '开场题生成失败，请重试')
+  } finally { sending.value = false }
   await scrollDown()
 }
 
 async function send() {
   if (!draft.value.trim() || sending.value) return
+  error.value = ''
   const content = draft.value.trim()
   thread.value.push({ msg: { role: 'user', content } })
   draft.value = ''
@@ -48,6 +61,11 @@ async function send() {
   try {
     const r = await api.sendInterview(sessionId.value, content)
     apply(r.data)
+  } catch (e: any) {
+    // 服务端未记录这次回答：撤回乐观插入，草稿还原，允许直接重发
+    thread.value.pop()
+    draft.value = content
+    error.value = errMsg(e, '评估失败，请重新发送')
   } finally { sending.value = false }
   await scrollDown()
 }
@@ -70,21 +88,29 @@ function apply(d: InterviewMsgResp) {
 }
 
 async function skip() {
+  error.value = ''
   awaiting.value = false
   sending.value = true
   try {
     const r = await api.skipInterview(sessionId.value)
     apply(r.data)
+  } catch (e: any) {
+    awaiting.value = true
+    error.value = errMsg(e, '操作失败，请重试')
   } finally { sending.value = false }
   await scrollDown()
 }
 
 async function resume() {
+  error.value = ''
   awaiting.value = false
   sending.value = true
   try {
     const r = await api.resumeInterview(sessionId.value)
     apply(r.data)
+  } catch (e: any) {
+    awaiting.value = true
+    error.value = errMsg(e, '深入考察题生成失败，请重试')
   } finally { sending.value = false }
   await scrollDown()
 }
@@ -92,8 +118,17 @@ async function resume() {
 async function onFinished() {
   finished.value = true
   await store.refreshAnalytics()
-  const r = await api.interviewReport(sessionId.value)
-  report.value = r.data
+  await loadReport()
+}
+
+async function loadReport() {
+  error.value = ''
+  try {
+    const r = await api.interviewReport(sessionId.value)
+    report.value = r.data
+  } catch (e: any) {
+    error.value = errMsg(e, '评估报告生成失败')
+  }
 }
 </script>
 
@@ -108,7 +143,8 @@ async function onFinished() {
         <button class="btn ghost" :class="{ onsel: type === 'behavioral' }" @click="type = 'behavioral'">行为面</button>
       </div>
       <p class="muted mt16">{{ type === 'technical' ? '考察 LLM/RAG/微调/系统设计等技术深度' : '考察项目协作、抗压、职业规划' }}</p>
-      <button class="btn mt16" @click="start">开始面试 →</button>
+      <button class="btn mt16" :disabled="sending" @click="start">{{ sending ? '生成开场题…' : '开始面试 →' }}</button>
+      <p v-if="error" class="mt8" style="color:var(--bad)">{{ error }}</p>
       <div v-if="!store.profile" class="muted mt8" style="font-size:13px">提示：先<RouterLink to="/resume" class="link">上传简历</RouterLink>可让提问更贴合你的背景。</div>
     </div>
 
@@ -151,6 +187,10 @@ async function onFinished() {
         <div v-if="lastFeedback" class="feedback mt8">
           <span class="pill moderate">本轮评分 {{ lastFeedback.score }}</span>
           <span class="muted" style="font-size:13px">· {{ lastFeedback.hint }}</span>
+        </div>
+        <div v-if="error" class="feedback mt8" style="color:var(--bad)">
+          {{ error }}
+          <button v-if="finished && !report" class="link" style="border:none;background:none;cursor:pointer" @click="loadReport">重试</button>
         </div>
       </div>
 

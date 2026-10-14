@@ -155,10 +155,10 @@
 （`type` ∈ `technical | behavioral`）
 **响应 data：** `{ "sessionId": "s_001", "type": "technical", "startedAt": "..." }`
 
-> 技术面会根据当前能力画像的 projects 定制首题（针对具体项目提问）；无画像时回退通用题。
+> 面试官全程由 LLM 驱动：首题针对画像项目定制（无画像则通用）；每轮回答由模型语义批注并动态追问；深入考察由模型提议。模型调用失败 → 50001（不回退脚本）。
 
 ### POST `/interview/{sessionId}/message`
-多轮对话。首题通过 `{ "role": "user", "content": "__START__" }` 拉取。
+多轮对话。首题通过 `{ "role": "user", "content": "__START__" }` 拉取（幂等）。
 **请求体：** `{ "role": "user", "content": "我的回答是……" }`
 **响应 data：**
 ```json
@@ -175,11 +175,13 @@
   }
 }
 ```
-- `note` 是对本轮回答的批注：`covered` 已覆盖要点、`missed` 可补充要点（≤3 条）、`tip` 调整建议，帮助用户快速修正回答策略。
-- `score` 由要点覆盖度驱动（55 + 45×覆盖率）。
-- `finished=true` 时附带终评。
+- `note` 是对本轮回答的语义批注：`covered` 已覆盖要点、`missed` 可补充要点（≤3 条）、`tip` 调整建议，帮助用户快速修正回答策略。
+- `score` 由模型按要点覆盖/深度/准确性综合给出（0-100）。
+- `finished=true` 时附带终评；技术面 5 题、行为面 4 题。
+- 等待 HITL 确认或有评估在途时再发消息 → 40001。
 
 ### GET `/interview/{sessionId}/report`
+面试未结束 → 40001；已结束由 LLM 读完整 transcript 生成总评（结果缓存）。
 **响应 data：**
 ```json
 {
@@ -195,11 +197,11 @@
   ]
 }
 ```
-`overallScore` 为各轮得分均值；`highlights`/`improvements` 从逐题批注聚合；`review` 逐题复盘优劣。
+`overallScore`/`dimensions`/`highlights`/`improvements` 由 LLM 基于完整记录生成；`review` 由后端逐轮批注确定性组装。
 
 ### HITL 中断（可选，Eino checkpoint）
-`POST /interview/{sessionId}/message` 返回 `finished=false, awaitingApproval=true` 时，
-前端展示「面试官想深入考察 X，是否继续？」，用户确认后 `POST /interview/{sessionId}/resume` 恢复。
+`POST /interview/{sessionId}/message` 返回 `finished=false, awaitingApproval=true` 时（模型在回答中发现值得深挖的技术点，每场技术面至多一次），
+前端展示「面试官想深入考察 X，是否继续？」，用户确认后 `POST /interview/{sessionId}/resume` 由 LLM 生成深挖题恢复；`POST /interview/{sessionId}/skip` 走常规下一题。
 
 ---
 

@@ -12,6 +12,7 @@ type Resource = domain.Resource
 type PlanItem = domain.PlanItem
 type PlanPhase = domain.PlanPhase
 type StudyPlan = domain.StudyPlan
+type ScoreByName = domain.ScoreByName
 
 type ResumeUploadResp struct {
 	ResumeID      string   `json:"resumeId"`
@@ -136,11 +137,6 @@ type InterviewReport struct {
 	Improvements []string         `json:"improvements"`
 	Transcript   []Msg            `json:"transcript"`
 	Review       []QuestionReview `json:"review"`
-}
-
-type ScoreByName struct {
-	Name  string `json:"name"`
-	Score int    `json:"score"`
 }
 
 type RadarItem struct {

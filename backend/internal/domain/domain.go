@@ -50,3 +50,8 @@ type StudyPlan struct {
 	TotalWeeks int         `json:"totalWeeks"`
 	Phases     []PlanPhase `json:"phases"`
 }
+
+type ScoreByName struct {
+	Name  string `json:"name"`
+	Score int    `json:"score"`
+}
