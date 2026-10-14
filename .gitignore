@@ -1,0 +1,11 @@
+# Go
+backend/server.exe
+backend/server
+
+# Node / Vite
+node_modules/
+frontend/dist/
+
+# Env & local
+.env.local
+*.log

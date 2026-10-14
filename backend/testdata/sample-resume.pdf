@@ -1,0 +1,40 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 566 >>
+stream
+BT /F1 11 Tf 50 780 Td 14 TL
+(Wang Fang) Tj T*
+(Target: LLM Application Engineer) Tj T*
+(4 years experience in NLP and LLM applications.) Tj T*
+(Skills: Python expert, PyTorch proficient, LangChain proficient, RAG proficient, Agent development, FAISS, Milvus, LoRA finetuning, Docker, FastAPI.) Tj T*
+(Project: Customer-service Agent platform - built multi-turn Agent with tool use, LangChain + Qwen, resolution rate up 35 percent.) Tj T*
+(Project: RAG document QA - hybrid retrieval and rerank, FAISS + BM25.) Tj T*
+(Education: BSc Computer Science, 2021.) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000858 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+928
+%%EOF
